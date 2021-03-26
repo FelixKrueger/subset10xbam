@@ -2,6 +2,7 @@
 import pysam
 import argparse
 import os
+from progress.bar import Bar
 
 VERSION = "0.1"
 
@@ -25,7 +26,26 @@ def main():
 def filter_bam(options, cell_ids):
     bamfile = pysam.AlignmentFile(options.bamfile, "rb")
 
+    outname = options.cellids.replace(".txt","")+".bam"
+
+    if not options.quiet:
+        print(f"Writing to {options.outdir}/{outname}")
+
+    outfile = pysam.AlignmentFile(options.outdir+"/"+outname, "w", template=bamfile)
+
+    # We can get the total read count from idxstats
+    total_reads = int(pysam.idxstats(options.bamfile).strip().split("\t")[-1])
+
+    bar = Bar('Filtering', max=total_reads)
+
+    index = 0
+
     for entry in bamfile:
+        index += 1
+        if index % 10000 == 0:
+            bar.index = index
+            bar.update()
+
         # We need to find the CB tag which is the error corrected
         # cell level barcode
 
@@ -33,10 +53,11 @@ def filter_bam(options, cell_ids):
             if tag[0] == "CB":
                 tag_value = tag[1][:tag[1].index("-")]
                 if tag_value in cell_ids:
-                    print(tag_value)
+                    outfile.write(entry)
 
                 break
 
+    bar.finish()
 
 
 def parse_cell_ids(options):
