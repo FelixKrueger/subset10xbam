@@ -1,0 +1,82 @@
+#!/usr/bin/env python3
+import pysam
+import argparse
+import os
+
+VERSION = "0.1"
+
+def main():
+    options = read_options()
+
+    if not options.quiet:
+        print(f"Parsing cell ids from {options.cellids}")
+
+    cell_ids = parse_cell_ids(options)
+
+    if not options.quiet:
+        print(f"Found {len(cell_ids)} cell ids")
+
+    if not options.quiet:
+        print(f"Extracting from {options.bamfile}")
+
+    filter_bam(options,cell_ids)
+
+
+def filter_bam(options, cell_ids):
+    bamfile = pysam.AlignmentFile(options.bamfile, "rb")
+
+    for entry in bamfile:
+        # We need to find the CB tag which is the error corrected
+        # cell level barcode
+
+        for tag in entry.tags:
+            if tag[0] == "CB":
+                tag_value = tag[1][:tag[1].index("-")]
+                if tag_value in cell_ids:
+                    print(tag_value)
+
+                break
+
+
+
+def parse_cell_ids(options):
+    cell_ids = []
+    with open(options.cellids) as infh:
+        for line in infh:
+            id = line.strip()
+            if len(id) > 0:
+                # If the id has -[number] on the end then we need to remove 
+                # that - maybe we'll filter in the future to allow the select
+                # of particular sample numbers but not yet.
+                if "-" in id:
+                    id = id[:id.index("-")]
+
+                print(f"Found ID {id}")
+                cell_ids.append(id)
+
+    return cell_ids
+
+
+def read_options():
+    parser = argparse.ArgumentParser(description="Extract read subsets from CellRanger BAM files")
+
+    parser.add_argument('--quiet', dest="quiet", action='store_true', default=False, help="Supress all but essential messages")
+    parser.add_argument('--version', action='version', version=f"Subset 10X BAM v{VERSION}")
+    parser.add_argument('--outdir', type=str, help="Folder to save data to (default .)", default=".")
+    parser.add_argument('--threads', type=int, help="Number of threads (default 1)", default=1)
+    parser.add_argument('--force', type=int, help="Overwrite output files even if they exist", default=False)
+    parser.add_argument('bamfile', type=str, help="A CellRanger BAM file")
+    parser.add_argument('cellids', type=str, help="A text file list of Cell Barcodes to extract")
+
+    options = parser.parse_args()
+
+    # Create the output directory if it's not there already
+    if not os.path.isdir(options.outdir):
+        os.makedirs(options.outdir)
+
+
+    return options
+
+
+if __name__ == "__main__":
+    main()
