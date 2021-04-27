@@ -55,9 +55,13 @@ def filter_bam(options, cell_ids):
                 tag_value = tag[1][:tag[1].index("-")]
                 if tag_value in cell_ids:
                     # print (entry.qname)
-                    entry.qname = entry.qname+f":CB:{tag_value}"
+                    if options.add_barcode:
+                        entry.qname = entry.qname+f":CB:{tag_value}"
+                    else:
+                        pass
                     # print (entry.qname)
                     # print(entry)
+                    
                     outfile.write(entry)
 
                 break
@@ -90,7 +94,8 @@ def read_options():
     parser.add_argument('--version', action='version', version=f"Subset 10X BAM v{VERSION}")
     parser.add_argument('--outdir', type=str, help="Folder to save data to (default .)", default=".")
     parser.add_argument('--threads', type=int, help="Number of threads (default 1)", default=1)
-    parser.add_argument('--force', type=int, help="Overwrite output files even if they exist", default=False)
+    parser.add_argument('--add_barcode', action='store_true', help="Add cell barcode (tag CB:Z:) to readID", default=False)
+    parser.add_argument('--force', action='store_true', help="Overwrite output files even if they exist", default=False)
     parser.add_argument('bamfile', type=str, help="A CellRanger BAM file")
     parser.add_argument('cellids', type=str, help="A text file list of Cell Barcodes to extract")
 
