@@ -2,6 +2,7 @@
 import pysam
 import argparse
 import os
+from time import sleep
 from progress.bar import Bar
 
 VERSION = "0.1"
@@ -48,11 +49,15 @@ def filter_bam(options, cell_ids):
 
         # We need to find the CB tag which is the error corrected
         # cell level barcode
-
+        # print (dir(entry))
         for tag in entry.tags:
             if tag[0] == "CB":
                 tag_value = tag[1][:tag[1].index("-")]
                 if tag_value in cell_ids:
+                    # print (entry.qname)
+                    entry.qname = entry.qname+f":CB:{tag_value}"
+                    # print (entry.qname)
+                    # print(entry)
                     outfile.write(entry)
 
                 break
