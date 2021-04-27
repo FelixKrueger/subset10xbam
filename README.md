@@ -25,5 +25,6 @@ optional arguments:
   --version          show program's version number and exit
   --outdir OUTDIR    Folder to save data to (default .)
   --threads THREADS  Number of threads (default 1)
-  --force FORCE      Overwrite output files even if they exist
+  --add_barcode      Add cell barcode (tag CB:Z:) to readID
+  --force            Overwrite output files even if they exist
 ```
